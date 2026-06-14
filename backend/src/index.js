@@ -1,10 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 import authRoutes from './routes/auth.js';
 import groupRoutes from './routes/groups.js';
 import expenseRoutes from './routes/expenses.js';
 import settlementRoutes from './routes/settlements.js';
+import importRoutes from './routes/imports.js';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/settlements', settlementRoutes);
+app.use('/api/imports', importRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
