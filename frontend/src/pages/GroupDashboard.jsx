@@ -1,3 +1,4 @@
+// Rohan's Rule Ledger View (Step 17) - Displays complete audit trail of paid vs owed split values
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
