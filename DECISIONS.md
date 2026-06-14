@@ -183,3 +183,60 @@ Every significant decision made during this project, the options considered, and
 **Chose:** Store both in the Expense row (`amount`, `amountInINR`, `exchangeRate`)
 
 **Why:** Computing on every query requires the exchange rate to be stored somewhere anyway. Storing it in the row makes every expense self-contained — you can always see what rate was used, when, and reproduce the exact calculation. Balance queries become simpler (just sum `amountInINR`) with no risk of a rate change retroactively altering historical balances.
+
+---
+
+## Decision 13 — Membership validation on expense creation
+
+**Context:** When creating an expense, should we validate that all
+split participants were active members on the expense date?
+
+**Options considered:**
+- Validate at import time only, trust manual entry
+- Validate on every expense creation regardless of source
+
+**Chose:** Validate on every POST /api/expenses
+
+**Why:** Sam's requirement is that March expenses don't affect him.
+If we only validate at import, a manually entered expense could
+silently include an inactive member. The membership check runs
+against joinedAt / leftAt for every participant on every expense.
+Out-of-bounds participants are rejected with a clear error message.
+
+
+## Decision 14 — Float rounding: remainder to largest share
+
+**Context:** Splitting ₹1199 equally among 4 people = ₹299.75 each.
+Fine. But ₹1440 among 4 = ₹360 each. Some amounts don't divide
+evenly and floating point makes it worse.
+
+**Options considered:**
+- Round everyone to 2 decimal places, ignore the remainder
+- Add the remainder to the first person's share
+- Add the remainder to the largest share
+
+**Chose:** Remainder goes to the largest share
+
+**Why:** Adding to the first person is arbitrary and slightly unfair
+to whoever happens to be listed first. Adding to the largest share
+is still arbitrary but the person already paying the most absorbs
+the smallest relative impact. Verified with test-splits.js that
+split amounts always sum exactly to the expense total.
+
+
+## Decision 15 — Backdating group creator membership
+
+**Context:** The group creator needs a joinedAt date. For historical
+imports (the flat existed since February), the creator's membership
+needs to start in February, not when they registered in the app.
+
+**Options considered:**
+- Always set joinedAt = now() for group creator
+- Accept optional joinedAt in the group creation payload
+
+**Chose:** Accept optional joinedAt, default to now()
+
+**Why:** The entire CSV import covers February onwards. If the group
+creator's membership starts today, every February expense fails
+the membership validation check. The optional backdating solves
+this without any special-casing in the expense logic.

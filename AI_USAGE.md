@@ -42,6 +42,18 @@ Claude was used as a thinking partner and code collaborator — not as a code ge
 **Prisma + Neon setup:**
 > "I'm using Prisma 7 with Neon PostgreSQL. What's the correct configuration for schema.prisma and prisma.config.ts when Neon requires both a pooled and a direct connection URL?"
 
+- "Write a splits.js utility that handles EQUAL, UNEQUAL, PERCENTAGE,
+  and SHARE split types. Each function must return an array of
+  {userId, amount} where amounts sum exactly to the expense total."
+
+- "Write an Express middleware that validates a Bearer JWT and attaches
+  the decoded user to req.user."
+
+- "For POST /api/expenses, write the membership validation logic.
+  Given an expense date and a list of userIds, check that each userId
+  has a GroupMembership where joinedAt <= date AND (leftAt IS NULL
+  OR leftAt >= date)."
+
 ---
 
 ## Three Cases Where Claude Was Wrong
