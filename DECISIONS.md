@@ -297,3 +297,44 @@ that caused intermittent failures during local test runs.
 compute, pooling reduces cold starts). Locally, the direct
 connection is faster and 100% reliable. One-line NODE_ENV check
 in db.js, no impact on production behavior.
+
+
+## Decision 19 — Pipeline Architecture for Anomaly Review & Finalization
+
+**Context:** Messy CSV inputs contain duplicate, zero-value, ambiguous date, and membership-violating entries that must be resolved by the user before committing.
+
+**Options considered:**
+- Auto-resolve all anomalies programmatically and import immediately
+- Reject files with anomalies outright, requiring manual pre-editing of the CSV
+- Pipeline: Parse -> Stage & Detect anomalies -> User Review -> Commit Finalized Dataset
+
+**Chose:** Pipeline architecture with review-and-confirm.
+
+**Why:** Satisfies Meera's rule ("I want to approve anything the app deletes or changes"). It ensures the CSV is never edited by hand (immutability of source), while giving the user absolute control to skip, convert, or modify entries before they hit database ledger tables.
+
+
+## Decision 20 — Custom DNS Override for Serverless Database Connectivity
+
+**Context:** Local network DNS resolvers occasionally fail to resolve or refuse CNAME queries for serverless cloud databases (like Neon).
+
+**Options considered:**
+- Hardcode the current resolved IP address (risky, as IPs change dynamically)
+- Force Node.js process to use Google Public DNS servers (`8.8.8.8`) at runtime
+
+**Chose:** Google DNS override using `dns.setServers(['8.8.8.8', '8.8.4.4'])`
+
+**Why:** Overriding DNS servers at the top of the entry point resolves connection failures cleanly without affecting the application's code logic, database credentials, or production environment behavior.
+
+
+## Decision 21 — Sequential Interactive Transaction for Mass CSV Commits
+
+**Context:** Committing 40+ expenses and settlements along with split calculations and guest profiles creates 100+ database writes/reads. Parallel executions inside a single Prisma interactive transaction cause connection pool lockups/starvation.
+
+**Options considered:**
+- Run database writes in parallel inside the transaction (`Promise.all`)
+- Run database writes sequentially inside a single transaction with an increased timeout
+
+**Chose:** Sequential writes + pre-resolved names + 90-second timeout
+
+**Why:** Parallel queries over a single transaction connection overload the transaction proxy, leading to hangs. Sequential processing is the stable, recommended path. By pre-resolving unique names first, we minimize lookup overhead, and the 90-second timeout ensures resilience against cloud database network roundtrip latencies.
+

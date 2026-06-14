@@ -178,6 +178,29 @@ function normalizePercentages(splits, totalAmount) {
 
 ---
 
+### Case 4 — Parallel writes inside Prisma transactions caused database lockups
+
+**What Claude produced:**
+
+```js
+// Initial optimized attempt: run all insertions concurrently
+const importPromises = resolvedRows.map(async (row) => {
+  const expense = await tx.expense.create({ ... });
+  await tx.expenseSplit.createMany({ ... });
+});
+await Promise.all(importPromises);
+```
+
+**Why it was wrong:** Sending 80+ concurrent database operations concurrently over a single interactive Prisma transaction connection exhausts the connection pool or overloads the Prisma transaction proxy engine, causing it to hang indefinitely or time out.
+
+**How I caught it:** Running the integration script verify-importer.js failed on the finalize step with a database transaction expiration error (`P2028: transaction expired after 30 seconds`).
+
+**What I changed:** We pre-resolved all unique guest and member names sequentially to construct the `memberMap` before starting the expense insertions, and then ran the actual inserts sequentially (`for...of` loop). We also increased the Prisma transaction timeout config to `90` seconds (`90000ms`).
+
+**Lesson:** Do not run too many parallel queries concurrently inside a single interactive Prisma transaction. Instead, run lookups ahead of time, do the insertions sequentially, and set a high timeout threshold to accommodate cloud database latency.
+
+---
+
 ## General Observations
 
 - Claude is reliable for boilerplate, schema structure, and explaining concepts
