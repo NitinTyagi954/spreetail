@@ -240,3 +240,60 @@ needs to start in February, not when they registered in the app.
 creator's membership starts today, every February expense fails
 the membership validation check. The optional backdating solves
 this without any special-casing in the expense logic.
+
+---
+
+## Decision 16 — Refund handling in balance calculation
+
+**Context:** isRefund expenses need to affect balances opposite to
+normal expenses. A refund reduces what the payer is credited for
+and reduces what participants owe.
+
+**Options considered:**
+- Filter out refunds entirely and handle as a separate calculation
+- Subtract refund amounts inline using the same paid/owed formula
+
+**Chose:** Subtract inline — same formula, negative contribution
+
+**Why:** Keeping one formula for all expenses is simpler and less
+error-prone than a separate refund path. isRefund = true flips
+the sign: subtracted from totalPaid for the payer, subtracted
+from totalOwed for participants. Verified manually that this
+produces correct net balances.
+
+
+## Decision 17 — Greedy debt simplification vs exact pairwise
+
+**Context:** Aisha wants "one number per person — who pays whom,
+how much, done." Raw balances show each person's net but don't
+say who specifically pays whom.
+
+**Options considered:**
+- Show raw net balances only (simpler, but doesn't answer who pays whom)
+- Exact pairwise tracking (track every debt pair, complex)
+- Greedy simplification (minimize number of transactions)
+
+**Chose:** Greedy debt simplification
+
+**Why:** Minimizes the number of transfers needed to settle all
+debts. Sort debtors and creditors by balance magnitude, match
+largest pairs first, emit a transfer for min(debt, credit),
+repeat. Correct for this group size. At scale (50+ members)
+this can be suboptimal but for 4-5 flatmates it is exact.
+
+
+## Decision 18 — db.js fallback to DIRECT_URL for local dev
+
+**Context:** Neon's pooled connection URL has a wake-up timeout
+that caused intermittent failures during local test runs.
+
+**Options considered:**
+- Always use pooled URL (production-like but unreliable locally)
+- Use DIRECT_URL only in development via NODE_ENV check
+
+**Chose:** Fallback to DIRECT_URL when NODE_ENV !== production
+
+**Why:** The pooler is needed in production (Neon charges by
+compute, pooling reduces cold starts). Locally, the direct
+connection is faster and 100% reliable. One-line NODE_ENV check
+in db.js, no impact on production behavior.

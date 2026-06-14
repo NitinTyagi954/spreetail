@@ -54,6 +54,14 @@ Claude was used as a thinking partner and code collaborator — not as a code ge
   has a GroupMembership where joinedAt <= date AND (leftAt IS NULL
   OR leftAt >= date)."
 
+- "Implement the greedy debt simplification algorithm. Input is an
+  array of {userId, netBalance}. Output is a minimal list of
+  {from, to, amount} transfers that zero out all balances."
+
+- "Write the ledger mapping for balance calculation. For each user,
+  return a chronological array of expenses showing: date, description,
+  amountPaid, amountOwed, netContribution per expense."
+
 ---
 
 ## Three Cases Where Claude Was Wrong
