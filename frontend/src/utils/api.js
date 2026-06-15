@@ -86,6 +86,12 @@ export const api = {
       method: 'DELETE',
       body: JSON.stringify({ leftAt })
     }),
+    
+  updateMemberDates: (groupId, userId, joinedAt, leftAt) =>
+    request(`/groups/${groupId}/members/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ joinedAt, leftAt })
+    }),
 
   // Expenses
   createExpense: (expenseData) => 

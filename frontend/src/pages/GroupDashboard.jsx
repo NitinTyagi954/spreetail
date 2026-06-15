@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { 
   Users, UserPlus, UserMinus, DollarSign, ArrowLeft, Upload, 
-  TrendingUp, TrendingDown, ArrowRightLeft, Calendar, FileText, Plus, Info
+  TrendingUp, TrendingDown, ArrowRightLeft, Calendar, FileText, Plus, Info, Edit3
 } from 'lucide-react';
 
 function formatUTCDate(dateStr) {
@@ -36,6 +36,14 @@ export default function GroupDashboard() {
   const [memberJoinDate, setMemberJoinDate] = useState('2026-02-01');
   const [removeUserId, setRemoveUserId] = useState('');
   const [memberLeftDate, setMemberLeftDate] = useState('2026-03-31');
+
+  // Edit Member Dates states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUserId, setEditUserId] = useState('');
+  const [editUserName, setEditUserName] = useState('');
+  const [editJoinDate, setEditJoinDate] = useState('');
+  const [editLeftDate, setEditLeftDate] = useState('');
+  const [editHasLeft, setEditHasLeft] = useState(false);
 
   // Manual Expense states
   const [expDesc, setExpDesc] = useState('');
@@ -104,6 +112,41 @@ export default function GroupDashboard() {
       fetchDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to remove member');
+    }
+  };
+
+  const handleOpenEditModal = (member, membership) => {
+    setError('');
+    setEditUserId(member.userId);
+    setEditUserName(member.name);
+    const joinedStr = membership?.joinedAt ? new Date(membership.joinedAt).toISOString().split('T')[0] : '2026-02-01';
+    setEditJoinDate(joinedStr);
+    
+    if (membership?.leftAt) {
+      const leftStr = new Date(membership.leftAt).toISOString().split('T')[0];
+      setEditLeftDate(leftStr);
+      setEditHasLeft(true);
+    } else {
+      setEditLeftDate('2026-03-31');
+      setEditHasLeft(false);
+    }
+    setShowEditModal(true);
+  };
+
+  const handleUpdateMemberDates = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const isoJoinDate = new Date(`${editJoinDate}T00:00:00.000Z`).toISOString();
+      const isoLeftDate = editHasLeft 
+        ? new Date(`${editLeftDate}T23:59:59.000Z`).toISOString() 
+        : null;
+
+      await api.updateMemberDates(groupId, editUserId, isoJoinDate, isoLeftDate);
+      setShowEditModal(false);
+      fetchDashboardData();
+    } catch (err) {
+      setError(err.message || 'Failed to update member dates');
     }
   };
 
@@ -266,8 +309,30 @@ export default function GroupDashboard() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                      <span style={{ fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {m.name} {m.isGuest && <span className="badge badge-blue" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>Guest</span>}
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditModal(m, membership);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: 'var(--text-secondary)',
+                            opacity: 0.6,
+                            transition: 'opacity 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
+                          title="Edit Member Dates"
+                        >
+                          <Edit3 size={12} />
+                        </button>
                       </span>
                       <span style={{ 
                         fontWeight: '700', 
@@ -513,6 +578,57 @@ export default function GroupDashboard() {
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
                 <button type="button" onClick={() => setShowRemoveModal(false)} className="btn btn-secondary">Cancel</button>
                 <button type="submit" className="btn btn-danger">Record Departure</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Member Dates Modal */}
+      {showEditModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)', display: 'flex',
+          justifyContent: 'center', alignItems: 'center', zIndex: 1000
+        }}>
+          <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '450px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={22} style={{ color: 'var(--primary)' }} /> Edit Membership Dates</h2>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+            </div>
+
+            <form onSubmit={handleUpdateMemberDates}>
+              <div className="form-group">
+                <label className="form-label">Member Name</label>
+                <input type="text" className="form-input" value={editUserName} disabled style={{ opacity: 0.7 }} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Joined Date</label>
+                <input type="date" className="form-input" value={editJoinDate} onChange={(e) => setEditJoinDate(e.target.value)} required />
+              </div>
+
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', marginBottom: '16px' }}>
+                <input 
+                  type="checkbox" 
+                  id="editHasLeft" 
+                  checked={editHasLeft} 
+                  onChange={(e) => setEditHasLeft(e.target.checked)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <label htmlFor="editHasLeft" style={{ color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.95rem' }}>This member has left the group</label>
+              </div>
+
+              {editHasLeft && (
+                <div className="form-group">
+                  <label className="form-label">Leave Date</label>
+                  <input type="date" className="form-input" value={editLeftDate} onChange={(e) => setEditLeftDate(e.target.value)} required />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-secondary">Cancel</button>
+                <button type="submit" className="btn btn-primary">Save Changes</button>
               </div>
             </form>
           </div>

@@ -210,6 +210,82 @@ router.post('/:id/members', async (req, res) => {
   }
 });
 
+// Update membership dates (joinedAt and leftAt)
+router.put('/:id/members/:userId', async (req, res) => {
+  const { id: groupId, userId } = req.params;
+  const { joinedAt, leftAt } = req.body;
+
+  try {
+    // 1. Verify caller is a member
+    const userMembership = await prisma.groupMembership.findFirst({
+      where: {
+        groupId,
+        userId: req.user.id,
+      },
+    });
+
+    if (!userMembership) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // 2. Find the membership for target user (active or past)
+    const membership = await prisma.groupMembership.findFirst({
+      where: {
+        groupId,
+        userId,
+      },
+    });
+
+    if (!membership) {
+      return res.status(404).json({ error: 'Membership not found for this user in this group' });
+    }
+
+    // Validate joinedAt date if provided
+    let joinDate = membership.joinedAt;
+    if (joinedAt) {
+      joinDate = new Date(joinedAt);
+      if (isNaN(joinDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid joinedAt date' });
+      }
+    }
+
+    // Validate leftAt date if provided
+    let leaveDate = membership.leftAt;
+    if (leftAt !== undefined) {
+      if (leftAt === null) {
+        leaveDate = null;
+      } else {
+        leaveDate = new Date(leftAt);
+        if (isNaN(leaveDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid leftAt date' });
+        }
+        if (leaveDate < joinDate) {
+          return res.status(400).json({ error: 'Leave date cannot be before join date' });
+        }
+      }
+    }
+
+    // 3. Update the database record
+    const updatedMembership = await prisma.groupMembership.update({
+      where: {
+        id: membership.id,
+      },
+      data: {
+        joinedAt: joinDate,
+        leftAt: leaveDate,
+      },
+    });
+
+    return res.json({
+      message: 'Membership dates successfully updated',
+      membership: updatedMembership,
+    });
+  } catch (error) {
+    console.error('Update membership dates error:', error);
+    return res.status(500).json({ error: 'Failed to update membership dates' });
+  }
+});
+
 // Remove member from group (set leftAt)
 router.delete('/:id/members/:userId', async (req, res) => {
   const { id: groupId, userId } = req.params;
