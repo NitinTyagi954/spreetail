@@ -558,19 +558,23 @@ export default function ImportDashboard() {
           }} className="grid-cols-2">
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Rows</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px' }}>{totalRowsCount}</h4>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', marginBottom: '2px' }}>{totalRowsCount}</h4>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>All rows in sheet</span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Manually Review</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-yellow)' }}>{manualReviewCount}</h4>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', marginBottom: '2px', color: 'var(--accent-yellow)' }}>{manualReviewCount}</h4>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Pending manual action</span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Correct Rows</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-green)' }}>{correctRowsCount}</h4>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', marginBottom: '2px', color: 'var(--accent-green)' }}>{correctRowsCount}</h4>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Initial issues-free rows</span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Ready to Import</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-blue)' }}>{readyToImportCount}</h4>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', marginBottom: '2px', color: 'var(--accent-blue)' }}>{readyToImportCount}</h4>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Correct + resolved (unskipped)</span>
             </div>
           </div>
 
