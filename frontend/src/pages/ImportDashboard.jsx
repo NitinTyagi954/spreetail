@@ -6,6 +6,43 @@ import {
   Settings, RefreshCw, ArrowLeft, ArrowRight, Play, Edit2
 } from 'lucide-react';
 
+// Helper to parse dates in YYYY-MM-DD, DD/MM/YYYY, or other formats safely
+const parseInputDate = (dateStr) => {
+  if (!dateStr) return null;
+  const trimmed = dateStr.trim();
+
+  // 1. Try parsing YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const d = new Date(`${trimmed}T12:00:00.000Z`);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // 2. Try parsing DD/MM/YYYY or MM/DD/YYYY
+  const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slashMatch) {
+    const val1 = parseInt(slashMatch[1], 10);
+    const val2 = parseInt(slashMatch[2], 10);
+    let year = parseInt(slashMatch[3], 10);
+    if (year < 100) year += 2000;
+    
+    // Default to DD/MM/YYYY unless day part is clearly month (>12)
+    if (val1 > 12) {
+      return new Date(Date.UTC(year, val2 - 1, val1, 12, 0, 0));
+    } else if (val2 > 12) {
+      return new Date(Date.UTC(year, val1 - 1, val2, 12, 0, 0));
+    } else {
+      return new Date(Date.UTC(year, val2 - 1, val1, 12, 0, 0));
+    }
+  }
+
+  // 3. Fallback to native parser
+  const parsed = new Date(trimmed);
+  if (!isNaN(parsed.getTime())) {
+    return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate(), 12, 0, 0));
+  }
+  return null;
+};
+
 export default function ImportDashboard() {
   const [searchParams] = useSearchParams();
   const groupId = searchParams.get('groupId');
@@ -259,6 +296,38 @@ export default function ImportDashboard() {
     }
   };
 
+  // 2.5. Resolve ambiguous date format choice
+  const handleSelectDateFormat = async (anom, opt) => {
+    try {
+      const rowNum = anom.rowNumber;
+      const updatedRow = { 
+        ...resolvedRows[rowNum],
+        date: opt.date,
+        isSkipped: false
+      };
+
+      setResolvedRows({
+        ...resolvedRows,
+        [rowNum]: updatedRow
+      });
+
+      // Submit resolution status to backend for this anomaly
+      await api.resolveAnomaly(anom.id, 'APPROVED', {
+        action: 'SELECT_DATE_FORMAT',
+        selectedFormat: opt.format,
+        selectedDate: opt.date
+      });
+
+      setAnomalyStatuses({
+        ...anomalyStatuses,
+        [anom.id]: 'APPROVED'
+      });
+      setError('');
+    } catch (err) {
+      setError(`Failed to resolve date format: ${err.message}`);
+    }
+  };
+
   // 3. Open Inline modify form (Step 18)
   const handleStartModify = (anom) => {
     const rowNum = anom.rowNumber;
@@ -290,8 +359,8 @@ export default function ImportDashboard() {
         throw new Error('Payer Name is required');
       }
 
-      const parsedDate = new Date(`${editDate}T12:00:00.000Z`);
-      if (isNaN(parsedDate.getTime())) {
+      const parsedDate = parseInputDate(editDate);
+      if (!parsedDate) {
         throw new Error('Invalid date format');
       }
 
@@ -562,7 +631,25 @@ export default function ImportDashboard() {
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              {canAutoApprove ? (
+                              {actionDetails.action === 'SELECT_DATE_FORMAT' ? (
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  {(actionDetails.options || []).map((opt) => (
+                                    <button
+                                      key={opt.format}
+                                      onClick={() => handleSelectDateFormat(anom, opt)}
+                                      className="btn btn-secondary"
+                                      style={{ 
+                                        padding: '4px 8px', 
+                                        fontSize: '0.72rem', 
+                                        color: status === 'APPROVED' && resolvedRows[anom.rowNumber]?.date === opt.date ? 'var(--accent-green)' : 'var(--accent-blue)', 
+                                        borderColor: status === 'APPROVED' && resolvedRows[anom.rowNumber]?.date === opt.date ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)'
+                                      }}
+                                    >
+                                      {opt.format === actionDetails.recommended ? '⭐ ' : ''}Use {opt.format}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : canAutoApprove ? (
                                 <button 
                                   onClick={() => handleApprove(anom)}
                                   className="btn btn-secondary"
