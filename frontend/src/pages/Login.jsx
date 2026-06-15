@@ -156,6 +156,81 @@ export default function Login() {
             {isLogin ? 'Sign Up' : 'Sign In'}
           </button>
         </div>
+
+        <div style={{
+          marginTop: '24px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          paddingTop: '20px'
+        }}>
+          <p style={{
+            fontSize: '0.8rem',
+            color: 'var(--text-secondary)',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: '12px',
+            textAlign: 'center'
+          }}>
+            Demo Accounts (Click to Fill)
+          </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px',
+            marginBottom: '12px'
+          }}>
+            {[
+              { name: 'Rohan', email: 'rohan@gmail.com' },
+              { name: 'Aisha', email: 'aisha@gmail.com' },
+              { name: 'Priya', email: 'priya@gmail.com' },
+              { name: 'Dev', email: 'dev@gmail.com' },
+              { name: 'Sam', email: 'sam@gmail.com' },
+              { name: 'Meera', email: 'meera@gmail.com' }
+            ].map(user => (
+              <button
+                key={user.email}
+                type="button"
+                onClick={() => {
+                  setEmail(user.email);
+                  setPassword('password123');
+                  setIsLogin(true);
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '6px',
+                  padding: '8px 4px',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.8rem',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--primary-glow)';
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+              >
+                {user.name}
+              </button>
+            ))}
+          </div>
+          <p style={{
+            fontSize: '0.75rem',
+            color: 'var(--text-secondary)',
+            textAlign: 'center',
+            margin: '0'
+          }}>
+            Password: <code style={{ color: 'var(--primary)' }}>password123</code>
+          </p>
+        </div>
       </div>
     </div>
   );

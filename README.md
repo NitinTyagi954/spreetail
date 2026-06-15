@@ -1,6 +1,18 @@
 # Spreetree — Shared Flatmate Expense Tracker
 
-Spreetree is a full-stack web application for managing shared household expenses. It handles multi-currency costs, date-bounded memberships, CSV import of messy spreadsheet exports, anomaly detection, and automated debt simplification.
+> [!IMPORTANT]
+> **Demo Login Credentials for Review / Evaluation**
+> 
+> To make it easy to log into the application as different flatmates and review their respective ledgers, balances, and history, the database is seeded with the following accounts. (All accounts use the password: `password123`)
+> 
+> * **Rohan:** `rohan@gmail.com`
+> * **Aisha:** `aisha@gmail.com`
+> * **Priya:** `priya@gmail.com`
+> * **Dev:** `dev@gmail.com`
+> * **Sam:** `sam@gmail.com`
+> * **Meera:** `meera@gmail.com` (ex-member, left on 2026-03-31)
+> 
+> *(Note: The login page also features click-to-fill shortcut buttons for each of these credentials.)*
 
 ---
 
