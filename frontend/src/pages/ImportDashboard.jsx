@@ -69,7 +69,8 @@ export default function ImportDashboard() {
       const data = await api.uploadCSV(groupId, file);
       setSession(data.session);
       setRows(data.rows);
-      setAnomalies(data.session.anomalies || []);
+      const sortedAnomalies = (data.session.anomalies || []).sort((a, b) => a.rowNumber - b.rowNumber);
+      setAnomalies(sortedAnomalies);
       setExchangeRate(data.exchangeRate || 83.0);
       
       // Initialize resolved rows map with parsed rows copy
@@ -81,7 +82,7 @@ export default function ImportDashboard() {
 
       // Initialize statuses map
       const statusesMap = {};
-      (data.session.anomalies || []).forEach(anom => {
+      sortedAnomalies.forEach(anom => {
         statusesMap[anom.id] = 'PENDING';
       });
       setAnomalyStatuses(statusesMap);
@@ -351,11 +352,11 @@ export default function ImportDashboard() {
               <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px' }}>{totalRowsCount}</h4>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Clean Rows</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Ready to Import</span>
               <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-green)' }}>{cleanCount}</h4>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Anomalies Flagged</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Manually Review</span>
               <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-yellow)' }}>{anomalies.length}</h4>
             </div>
             <div style={{ textAlign: 'center' }}>
