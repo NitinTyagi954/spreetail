@@ -201,6 +201,26 @@ await Promise.all(importPromises);
 
 ---
 
+### Case 5 — Custom DNS overrides and database pooler Transaction Mode broke group creation
+
+**What Claude produced:**
+Forcing the application to use Google DNS (`8.8.8.8`) at runtime via `dns.setServers(['8.8.8.8', '8.8.4.4'])` to work around local DNS server lookup failures.
+
+**Why it was wrong:**
+1. Hardcoding external DNS servers blocks DNS resolution completely on networks where external DNS queries (port 53) are firewalled or blocked.
+2. In trying to bypass the resulting lookup failures, pointing `DIRECT_URL` to a Neon PgBouncer pooler host failed because PgBouncer in **Transaction Mode** does not support Prisma's multi-statement interactive transactions (`prisma.$transaction(...)`), throwing `P2028: Unable to start a transaction in the given time`.
+
+**How I caught it:**
+When users tried to create a group, the request returned a `500 Internal Server Error` due to a transaction timeout. Checking the backend logs showed the transaction start failures. Running DNS lookup tests manually showed that the direct Neon host resolved perfectly when using the default system DNS but failed when Google DNS was forced.
+
+**What I changed:**
+Removed the `dns.setServers` override from the application code ([index.js](file:///c:/Users/hp/Desktop/Spreetree/backend/src/index.js), [test-db.js](file:///c:/Users/hp/Desktop/Spreetree/backend/test-db.js), [verify-importer.js](file:///c:/Users/hp/Desktop/Spreetree/backend/verify-importer.js)), letting it default to the host system DNS. Reverted `DIRECT_URL` in [.env](file:///c:/Users/hp/Desktop/Spreetree/backend/.env) to point to the direct (non-pooler) host to support transactions correctly.
+
+**Lesson:**
+Do not enforce custom network/DNS configurations at the application level as it reduces code portability and compatibility. Use direct connections for transactional databases and keep pooler connections for read-heavy operations, as PgBouncer Transaction Mode has strict limitations on interactive transactions.
+
+---
+
 ## General Observations
 
 - Claude is reliable for boilerplate, schema structure, and explaining concepts

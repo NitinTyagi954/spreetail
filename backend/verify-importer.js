@@ -1,8 +1,5 @@
 import fs from 'fs';
-import dns from 'dns';
 import { prisma } from './src/db.js';
-
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const API_URL = 'http://localhost:5000/api';
 const CSV_PATH = 'C:\\Users\\hp\\Downloads\\expenses_export.csv';

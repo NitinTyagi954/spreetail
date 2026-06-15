@@ -2,10 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import dotenv from 'dotenv';
-import dns from 'dns';
-
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 // Load environment variables from .env file
 dotenv.config();
 

@@ -82,3 +82,9 @@ Authorization: Bearer <token>
   ```bash
   node verify-endpoints.js
   ```
+
+### Troubleshooting
+- **Database Connection Issues (DNS Resolution & Transactions)**:
+  - Ensure that `DIRECT_URL` in your `.env` points to the direct (non-pooler) host (`ep-...neon.tech`). Neon's pooler URL (`-pooler`) runs in **Transaction Mode**, which does not support Prisma's multi-statement interactive transactions (`prisma.$transaction`).
+  - Avoid overriding runtime DNS settings (e.g., forcing `8.8.8.8`) at the application layer if your local network restricts/blocks external DNS lookups.
+

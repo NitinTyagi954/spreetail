@@ -320,10 +320,12 @@ in db.js, no impact on production behavior.
 **Options considered:**
 - Hardcode the current resolved IP address (risky, as IPs change dynamically)
 - Force Node.js process to use Google Public DNS servers (`8.8.8.8`) at runtime
+- Rely on system default DNS resolution (without overrides)
 
-**Chose:** Google DNS override using `dns.setServers(['8.8.8.8', '8.8.4.4'])`
+**Chose:** Rely on system default DNS resolution (Google DNS override was reverted).
 
-**Why:** Overriding DNS servers at the top of the entry point resolves connection failures cleanly without affecting the application's code logic, database credentials, or production environment behavior.
+**Why:** While the Google DNS override resolved connectivity in some development environments, it broke connectivity completely in networks where port 53 (DNS) queries to external IPs like `8.8.8.8` are blocked/intercepted, causing `ENOTFOUND` errors. Furthermore, using a pooler host as the direct connection string to bypass DNS broke Prisma's interactive transactions (`prisma.$transaction`). Reverting the DNS override and keeping the direct (non-pooler) host for `DIRECT_URL` ensures compatibility across both direct query and transaction pathways.
+
 
 
 ## Decision 21 — Sequential Interactive Transaction for Mass CSV Commits
