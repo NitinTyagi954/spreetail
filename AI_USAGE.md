@@ -64,7 +64,7 @@ Claude was used as a thinking partner and code collaborator — not as a code ge
 
 ---
 
-## Three Cases Where Claude Was Wrong
+## Cases Where Claude Was Wrong
 
 ### Case 1 — Balance calculation formula was incorrect
 
@@ -239,6 +239,33 @@ Analyzing the schema unique constraints and the `/auth/register` route code show
 
 **Lesson:**
 Consider registration constraints and database collisions early when designing invitation loops. Require users to have registered accounts before they can be added to workspaces or groups via email, or use an upgrade/claiming system, rather than creating passive guest accounts using standard email fields.
+
+---
+
+### Case 7 — Local timezone offset shifted date-only calendar fields
+
+**What Claude produced:**
+Formatting stored UTC date strings using the default browser local timezone conversion:
+```js
+new Date(membership.leftAt).toLocaleDateString()
+```
+
+**Why it was wrong:**
+Membership join/leave dates and CSV transaction dates are date-only calendar markers. The backend stores them as UTC strings (e.g. Meera's leave date as `2026-03-31T23:59:59.000Z`). When rendering in the browser using `toLocaleDateString()`, JavaScript automatically converts this UTC timestamp to the user's local timezone. For any user in an eastern timezone (e.g., Asia/Kolkata +5:30), the time `23:59:59.000Z` on March 31st shifts forward to `05:29:59 AM` on April 1st. This caused the UI to incorrectly display `Left: 4/1/2026` instead of `Left: 3/31/2026`.
+
+**How I caught it:**
+When manually removing Meera on `03/31/2026`, the member history list instantly rendered `Left: 4/1/2026`, displaying a discrepancy between what was input and what was shown.
+
+**What I changed:**
+Added a custom `formatUTCDate` helper function in [`GroupDashboard.jsx`](file:///c:/Users/hp/Desktop/Spreetree/frontend/src/pages/GroupDashboard.jsx) to format date-only fields using UTC components instead of local timezone offsets:
+```js
+function formatUTCDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
+}
+```
+Replaced all membership history and ledger date formats with this helper.
 
 ---
 

@@ -7,10 +7,10 @@ dotenv.config();
 
 const pool = new pg.Pool({
   connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
-  max: 3, // Prevent pool starvation on Neon
-  idleTimeoutMillis: 10000, // Close idle connections after 10s
-  connectionTimeoutMillis: 5000 // Timeout fast if connection fails
+  max: 6, // Sufficient for concurrent page requests
+  idleTimeoutMillis: 30000, // Keep connections active for 30 seconds
+  connectionTimeoutMillis: 10000
 });
 
 const adapter = new PrismaPg(pool);
-export const prisma = new PrismaClient({ adapter });
+export const prisma = new PrismaClient({ adapter, log: ['error', 'warn'] });

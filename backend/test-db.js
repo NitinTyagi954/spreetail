@@ -1,31 +1,22 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
-import dotenv from 'dotenv';
-// Load environment variables from .env file
-dotenv.config();
+import { prisma } from './src/db.js';
 
-const pool = new pg.Pool({
-  connectionString: process.env.DIRECT_URL,
-});
-
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
-async function testConnection() {
-  console.log('Testing connection to Neon PostgreSQL database...');
+async function test() {
+  console.log('Querying groupMembership with include...');
   try {
-    // Run a simple raw SQL query to test connection
-    const result = await prisma.$queryRaw`SELECT NOW() as current_time;`;
-    console.log('Successfully connected to Neon PostgreSQL!');
-    console.log('Database server time:', result[0].current_time);
-  } catch (error) {
-    console.error('Failed to connect to the database:', error);
-    process.exit(1);
+    const memberships = await prisma.groupMembership.findMany({
+      where: {
+        userId: '5fd670a0-0615-4581-a024-a628462d5c50',
+      },
+      include: {
+        group: true,
+      },
+    });
+    console.log('Success! Memberships with group found:', memberships);
+  } catch (err) {
+    console.error('Error:', err);
   } finally {
-    await prisma.$disconnect();
-    await pool.end();
+    process.exit(0);
   }
 }
 
-testConnection();
+test();

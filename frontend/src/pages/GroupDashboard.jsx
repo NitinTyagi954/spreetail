@@ -7,6 +7,12 @@ import {
   TrendingUp, TrendingDown, ArrowRightLeft, Calendar, FileText, Plus, Info
 } from 'lucide-react';
 
+function formatUTCDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
+}
+
 export default function GroupDashboard() {
   const { id: groupId } = useParams();
   const navigate = useNavigate();
@@ -221,10 +227,18 @@ export default function GroupDashboard() {
                   <UserPlus size={14} />
                 </button>
                 <button onClick={() => {
-                  if (balances && balances.members.length > 0) {
+                  if (balances && group) {
                     setError('');
-                    setRemoveUserId(balances.members[0].userId);
-                    setShowRemoveModal(true);
+                    const activeMembers = balances.members.filter(m => {
+                      const mem = group.memberships.find(mem => mem.userId === m.userId);
+                      return !mem || !mem.leftAt;
+                    });
+                    if (activeMembers.length > 0) {
+                      setRemoveUserId(activeMembers[0].userId);
+                      setShowRemoveModal(true);
+                    } else {
+                      setError('No active members to remove');
+                    }
                   }
                 }} className="btn btn-secondary" style={{ padding: '6px 8px' }} title="Remove Member">
                   <UserMinus size={14} />
@@ -266,9 +280,9 @@ export default function GroupDashboard() {
                     {/* Membership history dates */}
                     {membership && (
                       <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        <span>Joined: {new Date(membership.joinedAt).toLocaleDateString()}</span>
+                        <span>Joined: {formatUTCDate(membership.joinedAt)}</span>
                         {membership.leftAt && (
-                          <span style={{ color: 'var(--accent-red)' }}>Left: {new Date(membership.leftAt).toLocaleDateString()}</span>
+                          <span style={{ color: 'var(--accent-red)' }}>Left: {formatUTCDate(membership.leftAt)}</span>
                         )}
                       </div>
                     )}
@@ -364,7 +378,7 @@ export default function GroupDashboard() {
                       {selectedMember.ledger.map((item, idx) => (
                         <tr key={idx}>
                           <td style={{ fontSize: '0.85rem' }}>
-                            {new Date(item.date).toLocaleDateString()}
+                            {formatUTCDate(item.date)}
                           </td>
                           <td>
                             <div style={{ fontWeight: '500' }}>{item.description}</div>
@@ -479,9 +493,15 @@ export default function GroupDashboard() {
               <div className="form-group">
                 <label className="form-label">Select Member</label>
                 <select className="form-input" value={removeUserId} onChange={(e) => setRemoveUserId(e.target.value)} required>
-                  {balances?.members.map(m => (
-                    <option key={m.userId} value={m.userId}>{m.name}</option>
-                  ))}
+                  {balances?.members
+                    .filter(m => {
+                      const mem = group?.memberships.find(mem => mem.userId === m.userId);
+                      return !mem || !mem.leftAt;
+                    })
+                    .map(m => (
+                      <option key={m.userId} value={m.userId}>{m.name}</option>
+                    ))
+                  }
                 </select>
               </div>
 
