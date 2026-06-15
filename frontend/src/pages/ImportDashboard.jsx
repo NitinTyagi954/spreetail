@@ -250,14 +250,33 @@ export default function ImportDashboard() {
   const handleSaveModify = async (anom) => {
     try {
       const rowNum = anom.rowNumber;
+
+      if (!editDesc.trim()) {
+        throw new Error('Description is required');
+      }
+      if (editAmount === '' || isNaN(parseFloat(editAmount))) {
+        throw new Error('Valid amount is required');
+      }
+      if (!editDate) {
+        throw new Error('Date is required');
+      }
+      if (!editPayer.trim()) {
+        throw new Error('Payer Name is required');
+      }
+
+      const parsedDate = new Date(`${editDate}T12:00:00.000Z`);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date format');
+      }
+
       const updatedRow = { 
         ...resolvedRows[rowNum],
-        description: editDesc,
+        description: editDesc.trim(),
         amount: parseFloat(editAmount),
-        date: new Date(`${editDate}T12:00:00.000Z`).toISOString(),
-        paidBy: editPayer,
+        date: parsedDate.toISOString(),
+        paidBy: editPayer.trim(),
         splitType: editSplitType,
-        splitDetails: editSplitDetails,
+        splitDetails: editSplitDetails.trim(),
         isSkipped: false
       };
 
@@ -269,7 +288,14 @@ export default function ImportDashboard() {
       // Submit resolution status to backend
       const resolvedAction = {
         action: 'MODIFY_ROW',
-        fields: { description: editDesc, amount: editAmount, date: editDate, paidBy: editPayer, splitType: editSplitType, splitDetails: editSplitDetails }
+        fields: { 
+          description: editDesc.trim(), 
+          amount: parseFloat(editAmount), 
+          date: editDate, 
+          paidBy: editPayer.trim(), 
+          splitType: editSplitType, 
+          splitDetails: editSplitDetails.trim() 
+        }
       };
 
       await api.resolveAnomaly(anom.id, 'MODIFIED', resolvedAction);
@@ -278,6 +304,7 @@ export default function ImportDashboard() {
         [anom.id]: 'MODIFIED'
       });
       setEditingRowNumber(null);
+      setError(''); // Clear global errors on success
     } catch (err) {
       setError(`Failed to save modification: ${err.message}`);
     }
@@ -543,6 +570,19 @@ export default function ImportDashboard() {
                         {isEditing && (
                           <tr>
                             <td colSpan="5" style={{ background: 'rgba(245, 158, 11, 0.03)', padding: '20px' }}>
+                              {error && (
+                                <div style={{ 
+                                  backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+                                  border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                  color: 'var(--accent-red)', 
+                                  padding: '12px 16px', 
+                                  borderRadius: '8px', 
+                                  marginBottom: '16px',
+                                  fontSize: '0.9rem'
+                                }}>
+                                  ⚠️ {error}
+                                </div>
+                              )}
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }} className="grid-cols-2">
                                 <div className="form-group">
                                   <label className="form-label">Description</label>
