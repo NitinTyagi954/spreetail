@@ -280,11 +280,20 @@ router.post('/finalize', async (req, res) => {
           continue;
         }
 
+        const paidBy = (row.paidBy || row.paidByRaw || '').trim();
+        if (!paidBy) {
+          throw new Error(`Row ${row.rowNumber} is missing a payer name. Please modify or skip this row.`);
+        }
+
+        if (!row.date || isNaN(new Date(row.date).getTime())) {
+          throw new Error(`Row ${row.rowNumber} has an invalid or missing date. Please modify or skip this row.`);
+        }
+
         const expenseDate = new Date(row.date);
-        const paidById = memberMap.get(normalizeName(row.paidBy || row.paidByRaw).toLowerCase());
+        const paidById = memberMap.get(normalizeName(paidBy).toLowerCase());
 
         if (!paidById) {
-          throw new Error(`Payer ${row.paidBy || row.paidByRaw} could not be resolved.`);
+          throw new Error(`Payer "${paidBy}" on row ${row.rowNumber} could not be resolved. Please modify or skip this row.`);
         }
 
         if (row.isSettlement || row.action === 'CONVERT_TO_SETTLEMENT') {
@@ -427,7 +436,11 @@ router.post('/finalize', async (req, res) => {
     });
   } catch (error) {
     console.error('Finalize import error:', error);
-    return res.status(500).json({ error: `Failed to finalize import session: ${error.message}` });
+    const msg = error.message || '';
+    if (msg.startsWith('Row ') || msg.includes('could not be resolved') || msg.startsWith('Settlement on row ')) {
+      return res.status(400).json({ error: msg });
+    }
+    return res.status(500).json({ error: `Failed to finalize import session: ${msg}` });
   }
 });
 

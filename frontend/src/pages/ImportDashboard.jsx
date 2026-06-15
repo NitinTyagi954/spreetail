@@ -223,6 +223,20 @@ export default function ImportDashboard() {
       // Map resolvedRows back to array
       const finalRows = Object.values(resolvedRows);
       
+      // Validate all unskipped rows before submitting
+      for (const row of finalRows) {
+        if (row.isSkipped || row.action === 'SKIP_ROW') continue;
+
+        const paidBy = (row.paidBy || row.paidByRaw || '').trim();
+        if (!paidBy) {
+          throw new Error(`Row ${row.rowNumber} is missing a payer name. Please click "Modify" to set one, or "Reject" to discard the row.`);
+        }
+
+        if (!row.date) {
+          throw new Error(`Row ${row.rowNumber} is missing a date. Please click "Modify" to set one, or "Reject" to discard the row.`);
+        }
+      }
+      
       const res = await api.finalizeImport(session.id, finalRows);
       alert(res.message);
       navigate(`/groups/${groupId}`);
@@ -371,6 +385,8 @@ export default function ImportDashboard() {
                   {anomalies.map((anom) => {
                     const status = anomalyStatuses[anom.id];
                     const isEditing = editingRowNumber === anom.rowNumber;
+                    const actionDetails = JSON.parse(anom.suggestedAction || '{}');
+                    const canAutoApprove = !['REQUIRE_PAYER', 'REQUIRE_DATE', 'SELECT_DATE_FORMAT', 'RESOLVE_CONFLICT'].includes(actionDetails.action);
 
                     return (
                       <React.Fragment key={anom.id}>
@@ -388,18 +404,24 @@ export default function ImportDashboard() {
                           <td style={{ maxWidth: '300px', lineHeight: '1.4' }}>
                             <div>{anom.description}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                              Suggested: {JSON.parse(anom.suggestedAction).action}
+                              Suggested: {actionDetails.action}
                             </div>
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              <button 
-                                onClick={() => handleApprove(anom)}
-                                className="btn btn-secondary"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-green)', borderColor: status === 'APPROVED' ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)' }}
-                              >
-                                Approve
-                              </button>
+                              {canAutoApprove ? (
+                                <button 
+                                  onClick={() => handleApprove(anom)}
+                                  className="btn btn-secondary"
+                                  style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-green)', borderColor: status === 'APPROVED' ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)' }}
+                                >
+                                  Approve
+                                </button>
+                              ) : (
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center', paddingRight: '4px', fontStyle: 'italic' }}>
+                                  Manual action required
+                                </span>
+                              )}
                               <button 
                                 onClick={() => handleReject(anom)}
                                 className="btn btn-secondary"
