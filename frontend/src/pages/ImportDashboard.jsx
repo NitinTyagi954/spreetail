@@ -250,10 +250,15 @@ export default function ImportDashboard() {
 
   // Calculate statistics for UI
   const totalRowsCount = rows.length;
-  const skippedCount = Object.values(resolvedRows).filter(r => r.isSkipped).length;
-  const flaggedRowNumbers = new Set(anomalies.map(a => a.rowNumber));
-  const cleanCount = Math.max(0, totalRowsCount - flaggedRowNumbers.size);
-  const importedCount = totalRowsCount - skippedCount;
+  const correctRowsCount = rows.filter(row => !anomalies.some(anom => anom.rowNumber === row.rowNumber)).length;
+  const manualReviewCount = new Set(anomalies.filter(anom => anomalyStatuses[anom.id] === 'PENDING').map(anom => anom.rowNumber)).size;
+  const readyToImportCount = rows.filter(row => {
+    const resolved = resolvedRows[row.rowNumber];
+    if (resolved?.isSkipped) return false;
+    const rowAnoms = anomalies.filter(anom => anom.rowNumber === row.rowNumber);
+    const hasPending = rowAnoms.some(anom => anomalyStatuses[anom.id] === 'PENDING');
+    return !hasPending;
+  }).length;
 
   return (
     <div className="app-container animate-fade-in">
@@ -348,20 +353,20 @@ export default function ImportDashboard() {
             background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)'
           }} className="grid-cols-2">
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Rows Found</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Rows</span>
               <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px' }}>{totalRowsCount}</h4>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Ready to Import</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-green)' }}>{cleanCount}</h4>
-            </div>
-            <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Manually Review</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-yellow)' }}>{anomalies.length}</h4>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-yellow)' }}>{manualReviewCount}</h4>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Final Import Count</span>
-              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-blue)' }}>{importedCount}</h4>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Correct Rows</span>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-green)' }}>{correctRowsCount}</h4>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Ready to Import</span>
+              <h4 style={{ fontSize: '2rem', fontWeight: '700', marginTop: '6px', color: 'var(--accent-blue)' }}>{readyToImportCount}</h4>
             </div>
           </div>
 
