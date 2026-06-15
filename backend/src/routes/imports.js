@@ -70,6 +70,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // Fetch default exchange rate
     const usdRate = await getExchangeRate();
 
+    // Attach exchangeRate to parsed rows
+    parsedRows.forEach(row => {
+      row.exchangeRate = row.currency === 'USD' ? usdRate : 1.0;
+    });
+
     // Create session and anomalies in database
     const session = await prisma.$transaction(async (tx) => {
       const newSession = await tx.importSession.create({
@@ -195,6 +200,9 @@ router.post('/finalize', async (req, res) => {
     if (!membership) {
       return res.status(403).json({ error: 'Access denied' });
     }
+
+    // Fetch default exchange rate as a fallback
+    const usdRate = await getExchangeRate();
 
     // Commit everything in a single transaction
     const finalStats = await prisma.$transaction(async (tx) => {
@@ -323,7 +331,7 @@ router.post('/finalize', async (req, res) => {
         } else {
           // Import as Expense
           const currency = row.currency || 'INR';
-          const exchangeRate = row.exchangeRate || 1.0;
+          const exchangeRate = row.exchangeRate || (currency === 'USD' ? usdRate : 1.0);
           const amountInINR = Math.round(row.amount * exchangeRate * 100) / 100;
 
           const participantNames = Array.isArray(row.splitWith)

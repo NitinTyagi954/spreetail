@@ -83,7 +83,8 @@ export function calculateSplits(totalAmount, splitType, participants) {
       });
 
       const roundedPercentSum = Math.round(percentSum * 100) / 100;
-      if (Math.abs(roundedPercentSum - 100) > 0.01) {
+      const diff = Math.round(Math.abs(roundedPercentSum - 100) * 100) / 100;
+      if (diff > 0.01) {
         throw new Error(`Sum of percentages must equal 100%, got ${roundedPercentSum}%`);
       }
       break;

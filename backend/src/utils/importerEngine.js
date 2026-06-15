@@ -424,6 +424,23 @@ export function detectAnomalies(rows, groupMemberships) {
       const parsedDetails = parseSplitDetails(row.splitDetails);
       const sum = parsedDetails.reduce((s, p) => s + p.value, 0);
       if (Math.abs(sum - 100) > 0.01) {
+        // Calculate rounded normalized values
+        const normalizedList = parsedDetails.map(p => {
+          return {
+            name: p.name,
+            value: Math.round((p.value / sum) * 100 * 100) / 100
+          };
+        });
+
+        // Distribute remainder to make it exactly 100%
+        const currentSum = normalizedList.reduce((s, p) => s + p.value, 0);
+        const remainder = Math.round((100 - currentSum) * 100) / 100;
+        if (remainder !== 0 && normalizedList.length > 0) {
+          normalizedList[0].value = Math.round((normalizedList[0].value + remainder) * 100) / 100;
+        }
+
+        const normalizedDetailsStr = normalizedList.map(p => `${p.name} ${p.value}%`).join('; ');
+
         anomalies.push({
           rowNumber: row.rowNumber,
           anomalyType: 'PERCENTAGE_MISMATCH',
@@ -432,7 +449,7 @@ export function detectAnomalies(rows, groupMemberships) {
           suggestedAction: JSON.stringify({
             action: 'NORMALIZE_PERCENTAGES',
             originalDetails: row.splitDetails,
-            normalizedDetails: parsedDetails.map(p => `${p.name} ${Math.round((p.value / sum) * 100 * 100) / 100}%`).join('; ')
+            normalizedDetails: normalizedDetailsStr
           })
         });
       }

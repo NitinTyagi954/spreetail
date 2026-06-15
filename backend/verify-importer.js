@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { prisma } from './src/db.js';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://127.0.0.1:5000/api';
 const CSV_PATH = 'C:\\Users\\hp\\Downloads\\expenses_export.csv';
 
 async function runImporterVerification() {
