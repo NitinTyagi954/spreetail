@@ -59,97 +59,99 @@ export default function Groups() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   return (
-    <div className="app-container animate-fade-in">
-      {/* Header bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <div>
-          <h1 style={{ fontSize: '2.2rem', marginBottom: '4px' }}>Welcome, {user.name}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage your shared flat groups and split budgets</p>
+    <>
+      <div className="app-container animate-fade-in">
+        {/* Header bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+          <div>
+            <h1 style={{ fontSize: '2.2rem', marginBottom: '4px' }}>Welcome, {user.name}</h1>
+            <p style={{ color: 'var(--text-secondary)' }}>Manage your shared flat groups and split budgets</p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={() => setShowModal(true)} className="btn btn-primary">
+              <Plus size={18} /> Create Group
+            </button>
+            <button onClick={handleLogout} className="btn btn-secondary" title="Log Out">
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={() => setShowModal(true)} className="btn btn-primary">
-            <Plus size={18} /> Create Group
-          </button>
-          <button onClick={handleLogout} className="btn btn-secondary" title="Log Out">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </div>
 
-      {error && (
-        <div style={{ 
-          backgroundColor: 'rgba(239, 68, 68, 0.1)', 
-          border: '1px solid rgba(239, 68, 68, 0.2)', 
-          color: 'var(--accent-red)',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '24px'
-        }}>
-          {error}
-        </div>
-      )}
+        {error && (
+          <div style={{ 
+            backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.2)', 
+            color: 'var(--accent-red)',
+            padding: '16px',
+            borderRadius: '12px',
+            marginBottom: '24px'
+          }}>
+            {error}
+          </div>
+        )}
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-secondary)' }}>
-          Loading your flatmate groups...
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '60px 40px' }}>
-          <Users size={48} style={{ color: 'var(--text-secondary)', marginBottom: '16px', opacity: 0.5 }} />
-          <h3 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>No Groups Found</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
-            You aren't a member of any shared flat groups yet. Create a group to get started.
-          </p>
-          <button onClick={() => setShowModal(true)} className="btn btn-primary">
-            <Plus size={18} /> Create First Group
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-          {groups.map((group) => (
-            <Link key={group.id} to={`/groups/${group.id}`} className="glass-card" style={{ 
-              textDecoration: 'none', 
-              color: 'inherit',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              height: '180px'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '8px', color: 'var(--text-primary)' }}>
-                  {group.name}
-                </h3>
-                <p style={{ 
-                  color: 'var(--text-secondary)', 
-                  fontSize: '0.9rem',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  lineHeight: '1.4'
-                }}>
-                  {group.description || 'No description provided.'}
-                </p>
-              </div>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                borderTop: '1px solid var(--border-color)',
-                paddingTop: '14px',
-                marginTop: '14px'
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-secondary)' }}>
+            Loading your flatmate groups...
+          </div>
+        ) : groups.length === 0 ? (
+          <div className="glass-card" style={{ textAlign: 'center', padding: '60px 40px' }}>
+            <Users size={48} style={{ color: 'var(--text-secondary)', marginBottom: '16px', opacity: 0.5 }} />
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>No Groups Found</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
+              You aren't a member of any shared flat groups yet. Create a group to get started.
+            </p>
+            <button onClick={() => setShowModal(true)} className="btn btn-primary">
+              <Plus size={18} /> Create First Group
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+            {groups.map((group) => (
+              <Link key={group.id} to={`/groups/${group.id}`} className="glass-card" style={{ 
+                textDecoration: 'none', 
+                color: 'inherit',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '180px'
               }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Created {new Date(group.createdAt).toLocaleDateString()}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontWeight: '600', fontSize: '0.9rem' }}>
-                  Open Dashboard <ArrowRight size={16} />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', marginBottom: '8px', color: 'var(--text-primary)' }}>
+                    {group.name}
+                  </h3>
+                  <p style={{ 
+                    color: 'var(--text-secondary)', 
+                    fontSize: '0.9rem',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    lineHeight: '1.4'
+                  }}>
+                    {group.description || 'No description provided.'}
+                  </p>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  borderTop: '1px solid var(--border-color)',
+                  paddingTop: '14px',
+                  marginTop: '14px'
+                }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Created {new Date(group.createdAt).toLocaleDateString()}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                    Open Dashboard <ArrowRight size={16} />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Creation Modal */}
       {showModal && (
@@ -221,6 +223,6 @@ export default function Groups() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

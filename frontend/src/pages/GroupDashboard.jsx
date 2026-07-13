@@ -44,6 +44,9 @@ export default function GroupDashboard() {
   const [editJoinDate, setEditJoinDate] = useState('');
   const [editLeftDate, setEditLeftDate] = useState('');
   const [editHasLeft, setEditHasLeft] = useState(false);
+  const [editIsGuest, setEditIsGuest] = useState(false);
+  const [editEmail, setEditEmail] = useState('');
+  const [linking, setLinking] = useState(false);
 
   // Manual Expense states
   const [expDesc, setExpDesc] = useState('');
@@ -119,6 +122,8 @@ export default function GroupDashboard() {
     setError('');
     setEditUserId(member.userId);
     setEditUserName(member.name);
+    setEditIsGuest(member.isGuest || false);
+    setEditEmail('');
     const joinedStr = membership?.joinedAt ? new Date(membership.joinedAt).toISOString().split('T')[0] : '2026-02-01';
     setEditJoinDate(joinedStr);
     
@@ -131,6 +136,22 @@ export default function GroupDashboard() {
       setEditHasLeft(false);
     }
     setShowEditModal(true);
+  };
+
+  const handleLinkGuest = async (e) => {
+    e.preventDefault();
+    if (!editEmail.trim()) return;
+    setError('');
+    setLinking(true);
+    try {
+      await api.linkGuestUser(groupId, editUserId, editEmail.trim());
+      setShowEditModal(false);
+      fetchDashboardData();
+    } catch (err) {
+      setError(err.message || 'Failed to link guest member');
+    } finally {
+      setLinking(false);
+    }
   };
 
   const handleUpdateMemberDates = async (e) => {
@@ -218,7 +239,8 @@ export default function GroupDashboard() {
   }
 
   return (
-    <div className="app-container animate-fade-in">
+    <>
+      <div className="app-container animate-fade-in">
       {/* Navbar Breadcrumbs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <Link to="/groups" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.95rem' }}>
@@ -302,7 +324,7 @@ export default function GroupDashboard() {
                     style={{ 
                       padding: '12px', 
                       borderRadius: '10px', 
-                      background: isSelected ? 'var(--primary-glow)' : 'rgba(255, 255, 255, 0.02)',
+                      background: isSelected ? 'var(--primary-glow)' : 'var(--bg-main)',
                       border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
@@ -373,7 +395,7 @@ export default function GroupDashboard() {
                   <div key={idx} style={{ 
                     padding: '10px 14px', 
                     borderRadius: '8px', 
-                    background: 'rgba(255,255,255,0.02)', 
+                    background: 'var(--bg-main)', 
                     borderLeft: '3px solid var(--primary)',
                     fontSize: '0.85rem'
                   }}>
@@ -486,6 +508,7 @@ export default function GroupDashboard() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* 1. Add Member Modal */}
@@ -619,6 +642,36 @@ export default function GroupDashboard() {
                 <button type="submit" className="btn btn-primary">Save Changes</button>
               </div>
             </form>
+
+            {editIsGuest && (
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                <h3 style={{ fontSize: '1.05rem', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  Link to Registered Account
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '12px', lineHeight: '1.4' }}>
+                  Link this guest account to a registered user. This will merge all their imported expenses, splits, and settlements into that user's history, then remove the guest duplicate.
+                </p>
+                <div className="form-group">
+                  <label className="form-label">Registered User's Email</label>
+                  <input 
+                    type="email" 
+                    className="form-input" 
+                    placeholder="user@example.com" 
+                    value={editEmail} 
+                    onChange={(e) => setEditEmail(e.target.value)} 
+                  />
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleLinkGuest} 
+                  className="btn btn-primary" 
+                  style={{ width: '100%' }}
+                  disabled={linking || !editEmail.trim()}
+                >
+                  {linking ? 'Linking Account...' : 'Link & Merge Guest'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -672,7 +725,7 @@ export default function GroupDashboard() {
 
               <div className="form-group">
                 <label className="form-label">Split Participants (Select All)</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '10px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                   {balances?.members.map(m => (
                     <label key={m.userId} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
                       <input 
@@ -752,6 +805,6 @@ export default function GroupDashboard() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

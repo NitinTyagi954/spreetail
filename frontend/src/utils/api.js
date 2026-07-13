@@ -93,6 +93,12 @@ export const api = {
       body: JSON.stringify({ joinedAt, leftAt })
     }),
 
+  linkGuestUser: (groupId, guestUserId, email) =>
+    request(`/groups/${groupId}/members/${guestUserId}/link`, {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    }),
+
   // Expenses
   createExpense: (expenseData) => 
     request('/expenses', {

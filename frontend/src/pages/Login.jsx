@@ -159,7 +159,7 @@ export default function Login() {
 
         <div style={{
           marginTop: '24px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          borderTop: '1px solid var(--border-color)',
           paddingTop: '20px'
         }}>
           <p style={{
@@ -196,8 +196,8 @@ export default function Login() {
                   setIsLogin(true);
                 }}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'var(--bg-main)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '6px',
                   padding: '8px 4px',
                   color: 'var(--text-primary)',
@@ -213,8 +213,8 @@ export default function Login() {
                   e.currentTarget.style.color = 'var(--primary)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.background = 'var(--bg-main)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
                   e.currentTarget.style.color = 'var(--text-primary)';
                 }}
               >

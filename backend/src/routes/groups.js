@@ -286,6 +286,149 @@ router.put('/:id/members/:userId', async (req, res) => {
   }
 });
 
+// Link/promote guest member to a registered user
+router.post('/:id/members/:userId/link', async (req, res) => {
+  const { id: groupId, userId: guestId } = req.params;
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required to link a guest' });
+  }
+
+  try {
+    // 1. Verify caller is a member
+    const userMembership = await prisma.groupMembership.findFirst({
+      where: {
+        groupId,
+        userId: req.user.id,
+      },
+    });
+
+    if (!userMembership) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // 2. Verify guest user exists and is a guest
+    const guestUser = await prisma.user.findUnique({
+      where: { id: guestId },
+    });
+
+    if (!guestUser) {
+      return res.status(404).json({ error: 'Guest user not found' });
+    }
+
+    if (!guestUser.isGuest) {
+      return res.status(400).json({ error: 'This member is already a registered user, not a guest.' });
+    }
+
+    // 3. Find target real user
+    const realUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!realUser) {
+      return res.status(404).json({
+        error: `User not found with email "${email}". Please ask them to register on the site first so their account exists, then you can link this guest record to them.`
+      });
+    }
+
+    if (realUser.isGuest) {
+      return res.status(400).json({ error: 'The email provided belongs to another guest, not a registered user.' });
+    }
+
+    // 4. Perform database updates in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Update Expenses
+      await tx.expense.updateMany({
+        where: { paidById: guestId },
+        data: { paidById: realUser.id },
+      });
+
+      // Update ExpenseSplits
+      await tx.expenseSplit.updateMany({
+        where: { userId: guestId },
+        data: { userId: realUser.id },
+      });
+
+      // Update Settlements Sent
+      await tx.settlement.updateMany({
+        where: { paidById: guestId },
+        data: { paidById: realUser.id },
+      });
+
+      // Update Settlements Received
+      await tx.settlement.updateMany({
+        where: { receivedById: guestId },
+        data: { receivedById: realUser.id },
+      });
+
+      // Handle GroupMemberships
+      const guestMembership = await tx.groupMembership.findFirst({
+        where: { groupId, userId: guestId },
+      });
+
+      if (guestMembership) {
+        const realMembership = await tx.groupMembership.findFirst({
+          where: { groupId, userId: realUser.id },
+        });
+
+        if (realMembership) {
+          // If real user is already a member, delete the guest's membership
+          await tx.groupMembership.delete({
+            where: { id: guestMembership.id },
+          });
+        } else {
+          // If real user is not a member, update the guest's membership to point to the real user
+          await tx.groupMembership.update({
+            where: { id: guestMembership.id },
+            data: { userId: realUser.id },
+          });
+        }
+      }
+
+      // Also merge other group memberships if they exist
+      const otherMemberships = await tx.groupMembership.findMany({
+        where: { userId: guestId, NOT: { groupId } },
+      });
+
+      for (const om of otherMemberships) {
+        const realOm = await tx.groupMembership.findFirst({
+          where: { groupId: om.groupId, userId: realUser.id },
+        });
+
+        if (realOm) {
+          await tx.groupMembership.delete({
+            where: { id: om.id },
+          });
+        } else {
+          await tx.groupMembership.update({
+            where: { id: om.id },
+            data: { userId: realUser.id },
+          });
+        }
+      }
+
+      // Delete the guest user record
+      await tx.user.delete({
+        where: { id: guestId },
+      });
+    });
+
+    return res.json({
+      message: `Successfully linked guest member "${guestUser.name}" to registered user "${realUser.name}" (${realUser.email})`,
+      linkedUser: {
+        id: realUser.id,
+        name: realUser.name,
+        email: realUser.email,
+        isGuest: false,
+      }
+    });
+  } catch (error) {
+    console.error('Link guest user error:', error);
+    return res.status(500).json({ error: 'Failed to link guest member to registered user' });
+  }
+});
+
 // Remove member from group (set leftAt)
 router.delete('/:id/members/:userId', async (req, res) => {
   const { id: groupId, userId } = req.params;

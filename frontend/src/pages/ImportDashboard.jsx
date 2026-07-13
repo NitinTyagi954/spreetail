@@ -520,12 +520,12 @@ export default function ImportDashboard() {
                 htmlFor="csvFile" 
                 style={{ 
                   display: 'block', width: '100%', padding: '20px', 
-                  border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '12px',
+                  border: '2px dashed var(--border-color)', borderRadius: '12px',
                   textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s',
-                  background: 'rgba(255,255,255,0.01)'
+                  background: 'var(--bg-main)'
                 }}
                 onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
-                onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
               >
                 {file ? (
                   <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{file.name}</span>
@@ -646,7 +646,7 @@ export default function ImportDashboard() {
                                         padding: '4px 8px', 
                                         fontSize: '0.72rem', 
                                         color: status === 'APPROVED' && resolvedRows[anom.rowNumber]?.date === opt.date ? 'var(--accent-green)' : 'var(--accent-blue)', 
-                                        borderColor: status === 'APPROVED' && resolvedRows[anom.rowNumber]?.date === opt.date ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)'
+                                        borderColor: status === 'APPROVED' && resolvedRows[anom.rowNumber]?.date === opt.date ? 'var(--accent-green)' : 'var(--border-color)'
                                       }}
                                     >
                                       {opt.format === actionDetails.recommended ? '⭐ ' : ''}Use {opt.format}
@@ -657,7 +657,7 @@ export default function ImportDashboard() {
                                 <button 
                                   onClick={() => handleApprove(anom)}
                                   className="btn btn-secondary"
-                                  style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-green)', borderColor: status === 'APPROVED' ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)' }}
+                                  style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-green)', borderColor: status === 'APPROVED' ? 'var(--accent-green)' : 'var(--border-color)' }}
                                 >
                                   Approve
                                 </button>
@@ -669,14 +669,14 @@ export default function ImportDashboard() {
                               <button 
                                 onClick={() => handleReject(anom)}
                                 className="btn btn-secondary"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-red)', borderColor: status === 'REJECTED' ? 'var(--accent-red)' : 'rgba(255,255,255,0.08)' }}
+                                style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-red)', borderColor: status === 'REJECTED' ? 'var(--accent-red)' : 'var(--border-color)' }}
                               >
                                 Reject
                               </button>
                               <button 
                                 onClick={() => handleStartModify(anom)}
                                 className="btn btn-secondary"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-yellow)', borderColor: status === 'MODIFIED' ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.08)' }}
+                                style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--accent-yellow)', borderColor: status === 'MODIFIED' ? 'var(--accent-yellow)' : 'var(--border-color)' }}
                               >
                                 <Edit2 size={12} /> Modify
                               </button>
@@ -693,7 +693,7 @@ export default function ImportDashboard() {
                         {/* Inline modify panel (Step 18) */}
                         {isEditing && (
                           <tr>
-                            <td colSpan="5" style={{ background: 'rgba(245, 158, 11, 0.03)', padding: '20px' }}>
+                            <td colSpan="5" style={{ background: 'rgba(245, 158, 11, 0.07)', padding: '20px' }}>
                               {error && (
                                 <div style={{ 
                                   backgroundColor: 'rgba(239, 68, 68, 0.1)', 
