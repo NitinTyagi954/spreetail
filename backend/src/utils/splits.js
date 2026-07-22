@@ -1,13 +1,10 @@
 /**
- * Calculates expense split amounts for participants.
+ * Calculates expense split amounts for participants using integer arithmetic (paise/cents).
+ * Avoids floating-point precision issues by conducting all calculations in the smallest currency unit.
  * 
- * @param {number} totalAmount - The total expense amount to split (in original currency or INR)
+ * @param {number} totalAmount - The total expense amount to split (in original currency decimal format)
  * @param {'EQUAL'|'UNEQUAL'|'PERCENTAGE'|'SHARE'} splitType - The method of splitting
- * @param {Array<string|Object>} participants - Array of participant data:
- *   - For 'EQUAL': Array of userIds: ['id1', 'id2', ...]
- *   - For 'UNEQUAL': Array of objects: [{ userId: 'id1', amount: 50.0 }]
- *   - For 'PERCENTAGE': Array of objects: [{ userId: 'id1', percentage: 25.0 }]
- *   - For 'SHARE': Array of objects: [{ userId: 'id1', shares: 2 }]
+ * @param {Array<string|Object>} participants - Array of participant data
  * 
  * @returns {Array<Object>} Array of splits: [{ userId: 'id1', amount: 25.00, percentage?: number, shares?: number }]
  */
@@ -19,15 +16,14 @@ export function calculateSplits(totalAmount, splitType, participants) {
     throw new Error('Participants list cannot be empty');
   }
 
-  // Ensure totalAmount is rounded to 2 decimal places to start
-  const targetTotal = Math.round(totalAmount * 100) / 100;
+  // Convert total decimal amount to integer smallest currency unit (paise/cents)
+  const totalPaise = Math.round(totalAmount * 100);
   let splits = [];
 
   switch (splitType) {
     case 'EQUAL': {
-      // participants is array of userIds
       const count = participants.length;
-      const baseAmount = Math.floor((targetTotal / count) * 100) / 100;
+      const basePaise = Math.floor(totalPaise / count);
       
       splits = participants.map((userId) => {
         if (typeof userId !== 'string') {
@@ -35,7 +31,7 @@ export function calculateSplits(totalAmount, splitType, participants) {
         }
         return {
           userId,
-          amount: baseAmount,
+          amountPaise: basePaise,
           percentage: Math.round((100 / count) * 100) / 100,
           shares: 1,
         };
@@ -44,23 +40,21 @@ export function calculateSplits(totalAmount, splitType, participants) {
     }
 
     case 'UNEQUAL': {
-      let sum = 0;
+      let sumPaise = 0;
       splits = participants.map((p) => {
         if (!p.userId || typeof p.amount !== 'number') {
           throw new Error('For UNEQUAL splits, participants must contain userId and numeric amount');
         }
-        const amt = Math.round(p.amount * 100) / 100;
-        sum += amt;
+        const amtPaise = Math.round(p.amount * 100);
+        sumPaise += amtPaise;
         return {
           userId: p.userId,
-          amount: amt,
+          amountPaise: amtPaise,
         };
       });
 
-      // Round sum to 2 decimal places to compare
-      const roundedSum = Math.round(sum * 100) / 100;
-      if (Math.abs(roundedSum - targetTotal) > 0.01) {
-        throw new Error(`Sum of unequal split amounts (${roundedSum}) must equal total expense amount (${targetTotal})`);
+      if (sumPaise !== totalPaise) {
+        throw new Error(`Sum of unequal split amounts (${sumPaise / 100}) must equal total expense amount (${totalPaise / 100})`);
       }
       break;
     }
@@ -73,11 +67,10 @@ export function calculateSplits(totalAmount, splitType, participants) {
         }
         percentSum += p.percentage;
         
-        // Calculate raw amount and floor to cents
-        const amt = Math.floor(((p.percentage / 100) * targetTotal) * 100) / 100;
+        const amtPaise = Math.floor((p.percentage / 100) * totalPaise);
         return {
           userId: p.userId,
-          amount: amt,
+          amountPaise: amtPaise,
           percentage: p.percentage,
         };
       });
@@ -104,10 +97,10 @@ export function calculateSplits(totalAmount, splitType, participants) {
       }
 
       splits = participants.map((p) => {
-        const amt = Math.floor(((p.shares / totalShares) * targetTotal) * 100) / 100;
+        const amtPaise = Math.floor((p.shares / totalShares) * totalPaise);
         return {
           userId: p.userId,
-          amount: amt,
+          amountPaise: amtPaise,
           shares: p.shares,
           percentage: Math.round(((p.shares / totalShares) * 100) * 100) / 100,
         };
@@ -119,22 +112,26 @@ export function calculateSplits(totalAmount, splitType, participants) {
       throw new Error(`Invalid split type: ${splitType}`);
   }
 
-  // Adjust for floating point remainder.
-  // We sum the allocated amounts and distribute any difference (remainder)
-  // to the participant with the largest amount (or first in case of ties).
-  const allocatedSum = splits.reduce((sum, s) => sum + s.amount, 0);
-  const remainder = Math.round((targetTotal - allocatedSum) * 100) / 100;
+  // Adjust for remaining paise from integer floor division
+  const allocatedSumPaise = splits.reduce((sum, s) => sum + s.amountPaise, 0);
+  const remainderPaise = totalPaise - allocatedSumPaise;
 
-  if (remainder !== 0 && splits.length > 0) {
-    // Find the participant with the maximum amount to allocate the remainder to
+  if (remainderPaise !== 0 && splits.length > 0) {
     let maxIndex = 0;
     for (let i = 1; i < splits.length; i++) {
-      if (splits[i].amount > splits[maxIndex].amount) {
+      if (splits[i].amountPaise > splits[maxIndex].amountPaise) {
         maxIndex = i;
       }
     }
-    splits[maxIndex].amount = Math.round((splits[maxIndex].amount + remainder) * 100) / 100;
+    splits[maxIndex].amountPaise += remainderPaise;
   }
 
-  return splits;
+  // Convert integer paise back to decimal format for output
+  return splits.map((s) => {
+    const { amountPaise, ...rest } = s;
+    return {
+      ...rest,
+      amount: amountPaise / 100,
+    };
+  });
 }
